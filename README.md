@@ -1,0 +1,290 @@
+# Audit Trail — Oracle APEX Process Type Plug-in
+
+An Oracle APEX **Process Type** plug-in that captures changes made through an APEX form and stores them in a structured audit table.
+
+It records:
+
+- `INSERT`, `UPDATE`, and `DELETE` operations
+- Changed column names
+- Old values and new values as JSON
+- APEX application and page
+- APEX user
+- Session ID
+- Client IP address
+- Timestamp
+- Optional reason/comment supplied by a page item
+
+The plug-in can also create or repair its audit table automatically.
+
+> **Oracle APEX:** 26.1.0  
+> **Plug-in type:** Process Type  
+> **Internal name:** `COM_CEMSM_AUDIT_TRAIL`  
+> **License:** MIT
+
+## ✨ Features
+
+- Automatic detection of `INSERT`, `UPDATE`, and `DELETE`
+- Captures before/after values
+- Logs only changed columns by default
+- Optional include/exclude column lists
+- Optional sensitive-column masking
+- Optional column-to-page-item mapping
+- Optional reason/comment field
+- Automatic creation/repair of the audit table
+- Can share one audit table across multiple pages/applications
+- Uses the current APEX application user and session context
+- Rolls back the page save if audit logging fails
+
+## 📦 Installation
+
+### 1. Import the plug-in
+
+Download the plug-in export:
+
+[`process_type_plugin_com_cemsm_audit_trail.sql`](process_type_plugin_com_cemsm_audit_trail.sql)
+
+In Oracle APEX:
+
+1. Open your application.
+2. Go to **Shared Components**.
+3. Open **Plug-ins**.
+4. Choose **Import**.
+5. Upload `process_type_plugin_com_cemsm_audit_trail.sql`.
+6. Install the plug-in.
+
+The repository contains the complete APEX plug-in export as a single SQL file.
+
+### 2. Add the Audit Trail process
+
+Open the page containing the form you want to audit.
+
+Go to:
+
+**Page Designer → Processing**
+
+Add a process of type:
+
+**Audit Trail**
+
+Configure these required attributes:
+
+| Attribute | Example |
+|---|---|
+| Table Name | `EMPLOYEES` |
+| Primary Key Column | `EMPLOYEE_ID` |
+| Primary Key Item | `P10_EMPLOYEE_ID` |
+
+For the normal form-processing pattern, place the Audit Trail process **before the Automatic Row Processing (DML) process** and give it the same server-side condition.
+
+### 3. Configure the audit table
+
+The default audit table is:
+
+```text
+AUDIT_TRAIL_LOG
+```
+
+With **Auto Create** enabled, the plug-in creates the table when it does not exist and adds missing required columns when necessary.
+
+The audit table contains:
+
+```text
+ID
+TABLE_NAME
+PK_VALUE
+OPERATION
+CHANGED_COLS
+OLD_VALUES
+NEW_VALUES
+REASON
+APP_ID
+PAGE_ID
+APP_USER
+SESSION_ID
+IP_ADDRESS
+CHANGED_ON
+```
+
+> **Important:** automatic table creation/repair requires the parsing schema to have permission to create/alter the audit table.
+
+## ⚙️ Configuration
+
+### Operation
+
+Default:
+
+```text
+AUTO
+```
+
+`AUTO` detects the operation from the current request and primary-key state.
+
+You can also force:
+
+- `INSERT`
+- `UPDATE`
+- `DELETE`
+
+### Item Prefix
+
+By default, table columns are matched to APEX page items using the page prefix.
+
+For example:
+
+```text
+EMPLOYEE_NAME
+```
+
+is matched to:
+
+```text
+P10_EMPLOYEE_NAME
+```
+
+You can specify another prefix when your item naming convention is different.
+
+### Item Mapping
+
+For columns whose page item names do not follow the prefix convention:
+
+```text
+SAL=P10_SALARY,DEPT_ID=P10_DEPARTMENT
+```
+
+Mapped items override the normal prefix rule.
+
+### Include Columns
+
+Restrict auditing to selected columns:
+
+```text
+FIRST_NAME,LAST_NAME,SALARY
+```
+
+When empty, all supported columns are considered unless excluded.
+
+### Exclude Columns
+
+Never log selected columns:
+
+```text
+CREATED_BY,LAST_UPDATED
+```
+
+### Mask Columns
+
+For sensitive data:
+
+```text
+PASSWORD,CARD_NO
+```
+
+Changes are still detected, but old and new values are stored as:
+
+```text
+***
+```
+
+### Log Only Changed Columns
+
+Enabled by default.
+
+For updates, only columns whose values changed are written to the JSON old/new images.
+
+### Skip If Unchanged
+
+Enabled by default.
+
+If an update does not change any audited column, no audit row is written.
+
+### Reason Item
+
+Optionally specify a page item such as:
+
+```text
+P10_CHANGE_REASON
+```
+
+Its value is stored in the `REASON` column.
+
+## 🔍 How It Works
+
+The plug-in runs before the form DML.
+
+For an existing row it:
+
+1. Reads the current database row.
+2. Reads the submitted APEX page-item values.
+3. Determines the operation.
+4. Compares old and new values.
+5. Builds old/new JSON images.
+6. Determines the changed columns.
+7. Adds APEX session context.
+8. Inserts one audit row.
+9. Allows the normal page DML to continue.
+
+For an update, a conceptual audit record looks like:
+
+```json
+{
+  "operation": "UPDATE",
+  "changed_cols": "SALARY,DEPARTMENT_ID",
+  "old_values": {
+    "SALARY": 4500,
+    "DEPARTMENT_ID": 10
+  },
+  "new_values": {
+    "SALARY": 5200,
+    "DEPARTMENT_ID": 20
+  },
+  "app_user": "CEMSM"
+}
+```
+
+For a new row whose primary key is generated by the database, the key is not yet available when the plug-in executes before the DML, so the logged primary-key value can be empty.
+
+## 🛡️ Error Handling
+
+Audit logging is part of the same page-processing transaction.
+
+If the plug-in cannot write the audit record, it raises an error and the page save is rolled back.
+
+This prevents a successful form change from occurring without its corresponding audit record.
+
+## 🧪 Live Demo
+
+An interactive browser-based demonstration is included in this repository:
+
+**[Open the Audit Trail Demo](demo.html)**
+
+The demo is a standalone simulation designed to explain the plug-in flow visually. It does not connect to an Oracle database.
+
+For the APEX.world demo URL, use:
+
+`https://cemsm.github.io/Audit-Trail/demo.html`
+
+## 📁 Repository Structure
+
+```text
+Audit-Trail/
+├── screenshots/
+│   └── preview.png
+├── process_type_plugin_com_cemsm_audit_trail.sql
+├── apexplugin.json
+├── demo.html
+├── README.md
+└── LICENSE
+```
+
+## 📋 Requirements
+
+- Oracle APEX 26.1.0
+- An APEX page with a form/DML process
+- The audited table must be in the current parsing schema
+- The parsing schema needs the required privileges when automatic audit-table creation/repair is enabled
+
+## 📄 License
+
+MIT License.
+
+Copyright © 2026 Mohammad Saleh Moeinadini (Cemsm).

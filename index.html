@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle APEX Audit Trail — Interactive Demo</title>
+<style>
+:root{
+  --bg:#0b1020;--panel:#121a2e;--panel2:#18223b;--text:#e8edf7;--muted:#96a3bd;
+  --line:#293654;--accent:#62a8ff;--green:#46d39a;--yellow:#f4c95d;--red:#ff6b7a;
+  --shadow:0 20px 60px rgba(0,0,0,.28);--radius:18px
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 10% 0%,#18284a 0,#0b1020 42%,#080c16 100%);
+font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+.container{width:min(1180px,92%);margin:auto}
+.hero{padding:58px 0 34px}
+.badge{display:inline-flex;padding:7px 12px;border:1px solid #35517d;border-radius:999px;color:#9fc7ff;background:#12213c;font-size:13px}
+h1{font-size:clamp(36px,6vw,66px);line-height:1.02;margin:18px 0 14px;letter-spacing:-2px}
+h1 span{color:var(--accent)}
+.hero p{max-width:780px;color:var(--muted);font-size:18px;line-height:1.7}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;margin:22px 0}
+.card{background:rgba(18,26,46,.92);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+.card h2{margin:0 0 8px;font-size:20px}.sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:block;color:#b8c4da;font-size:12px;margin-bottom:6px}
+input{width:100%;padding:12px 13px;background:#0d1528;border:1px solid #2c3a59;color:var(--text);border-radius:10px;outline:none}
+input:focus{border-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer;background:#233453;color:#dce8fb}
+button.primary{background:var(--accent);color:#06101f}
+button.danger{background:#4a1e2a;color:#ffd8de}
+button:hover{filter:brightness(1.12)}
+.flow{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:18px}
+.step{padding:12px 14px;background:#0e172a;border:1px solid var(--line);border-radius:12px;text-align:center}
+.step strong{display:block;font-size:13px}.step small{color:var(--muted)}
+.arrow{color:#5c7196;font-size:20px}
+.log-header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px}
+.count{font-size:12px;color:#9fc7ff;background:#10233e;border:1px solid #284a76;padding:6px 9px;border-radius:999px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:#9ba9c2;font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.op{display:inline-block;padding:4px 7px;border-radius:7px;font-size:11px;font-weight:800}
+.op.update{background:#263d21;color:#8fe6a9}.op.insert{background:#1b3450;color:#9ecbff}.op.delete{background:#4a2029;color:#ffadb8}
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.json{background:#0a1120;border:1px solid var(--line);border-radius:12px;padding:14px;overflow:auto}
+.json h3{font-size:12px;margin:0 0 8px;color:#a9b7cf}
+pre{margin:0;white-space:pre-wrap;color:#cdd7e9;font-size:12px;line-height:1.55}
+.config{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:15px}
+.config div{background:#0e1729;border:1px solid var(--line);padding:14px;border-radius:12px}
+.config b{display:block;font-size:12px;margin-bottom:5px}.config span{color:var(--muted);font-size:12px}
+.notice{border-left:3px solid var(--yellow);padding:12px 14px;background:#17170f;color:#cfc9a6;border-radius:8px;margin-top:16px;font-size:13px;line-height:1.6}
+footer{padding:30px 0 55px;color:#687894;text-align:center;font-size:12px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.form-grid,.diff,.config{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <section class="hero">
+    <span class="badge">ORACLE APEX • PROCESS TYPE PLUG-IN</span>
+    <h1>Audit <span>Trail</span></h1>
+    <p>
+      An interactive demonstration of how the Oracle APEX Audit Trail plug-in captures
+      form changes, compares old and new values, and writes a structured audit record.
+    </p>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1. Simulated APEX Form</h2>
+      <div class="sub">Change a field and click <b>Save Changes</b> to simulate an APEX form submission.</div>
+      <div class="form-grid">
+        <div><label>Employee ID</label><input id="id" value="1001" disabled></div>
+        <div><label>Employee Name</label><input id="name" value="John Smith"></div>
+        <div><label>Department</label><input id="dept" value="Engineering"></div>
+        <div><label>Salary</label><input id="salary" value="5200"></div>
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="saveUpdate()">Save Changes</button>
+        <button onclick="insertRow()">Simulate Insert</button>
+        <button class="danger" onclick="deleteRow()">Simulate Delete</button>
+        <button onclick="resetForm()">Reset</button>
+      </div>
+      <div class="notice">
+        This page is a browser-only demonstration. No Oracle database is contacted and no
+        real APEX session is required. The interactive behavior mirrors the plug-in's audit flow.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. What the plug-in does</h2>
+      <div class="sub">The normal page-processing sequence.</div>
+      <div class="flow">
+        <div class="step"><strong>APEX Form</strong><small>submitted values</small></div>
+        <div class="arrow">→</div>
+        <div class="step"><strong>Audit Trail</strong><small>before DML</small></div>
+        <div class="arrow">→</div>
+        <div class="step"><strong>Compare</strong><small>old vs new</small></div>
+        <div class="arrow">→</div>
+        <div class="step"><strong>Audit Table</strong><small>one log row</small></div>
+      </div>
+      <div class="config">
+        <div><b>Operation</b><span>AUTO / INSERT / UPDATE / DELETE</span></div>
+        <div><b>Audit Table</b><span>AUDIT_TRAIL_LOG</span></div>
+        <div><b>Changed Columns</b><span>Only changed by default</span></div>
+        <div><b>Old Values</b><span>JSON snapshot</span></div>
+        <div><b>New Values</b><span>JSON snapshot</span></div>
+        <div><b>Context</b><span>User, app, page, session, IP</span></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="log-header">
+      <div>
+        <h2>3. Audit Trail Log</h2>
+        <div class="sub">Each simulated form operation creates an audit record.</div>
+      </div>
+      <span class="count" id="count">0 records</span>
+    </div>
+    <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Operation</th><th>Table</th><th>PK</th><th>Changed Columns</th><th>User</th></tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+
+    <div class="diff">
+      <div class="json"><h3>OLD VALUES</h3><pre id="oldJson">{}</pre></div>
+      <div class="json"><h3>NEW VALUES</h3><pre id="newJson">{}</pre></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:22px">
+    <h2>4. Typical APEX Configuration</h2>
+    <div class="sub">Add the process before Automatic Row Processing (DML).</div>
+    <div class="config">
+      <div><b>Table Name</b><span class="mono">EMPLOYEES</span></div>
+      <div><b>Primary Key Column</b><span class="mono">EMPLOYEE_ID</span></div>
+      <div><b>Primary Key Item</b><span class="mono">P10_EMPLOYEE_ID</span></div>
+      <div><b>Item Prefix</b><span class="mono">P10_</span></div>
+      <div><b>Skip If Unchanged</b><span>Enabled</span></div>
+      <div><b>Log Only Changed</b><span>Enabled</span></div>
+    </div>
+  </section>
+
+  <footer>
+    Audit Trail — Oracle APEX Process Type Plug-in ·
+    <a href="https://github.com/Cemsm/Audit-Trail" style="color:#7fb5ff">GitHub Repository</a>
+  </footer>
+</div>
+
+<script>
+const initial = {EMPLOYEE_ID:"1001", EMPLOYEE_NAME:"John Smith", DEPARTMENT:"Engineering", SALARY:"5200"};
+let current = {...initial};
+let logs = [];
+
+function valuesFromForm(){
+  return {
+    EMPLOYEE_ID: document.getElementById("id").value,
+    EMPLOYEE_NAME: document.getElementById("name").value,
+    DEPARTMENT: document.getElementById("dept").value,
+    SALARY: document.getElementById("salary").value
+  };
+}
+function changed(oldV,newV){
+  return Object.keys(newV).filter(k => String(oldV[k] ?? "") !== String(newV[k] ?? ""));
+}
+function addLog(operation, oldV, newV){
+  const cols = changed(oldV,newV);
+  const now = new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  logs.unshift({now,operation,pk:newV.EMPLOYEE_ID || oldV.EMPLOYEE_ID || "—",cols,user:"CEMSM",oldV,newV});
+  render();
+}
+function saveUpdate(){
+  const next = valuesFromForm();
+  addLog("UPDATE", current, next);
+  current = {...next};
+}
+function insertRow(){
+  const next = {...valuesFromForm(), EMPLOYEE_ID:String(1000 + logs.length + 1)};
+  document.getElementById("id").value = next.EMPLOYEE_ID;
+  addLog("INSERT", {}, next);
+  current = {...next};
+}
+function deleteRow(){
+  const old = valuesFromForm();
+  addLog("DELETE", old, {});
+}
+function resetForm(){
+  current = {...initial};
+  document.getElementById("id").value=initial.EMPLOYEE_ID;
+  document.getElementById("name").value=initial.EMPLOYEE_NAME;
+  document.getElementById("dept").value=initial.DEPARTMENT;
+  document.getElementById("salary").value=initial.SALARY;
+  document.getElementById("oldJson").textContent="{}";
+  document.getElementById("newJson").textContent="{}";
+}
+function render(){
+  const body=document.getElementById("logBody");
+  body.innerHTML=logs.map((x,i)=>`
+    <tr>
+      <td class="mono">${x.now}</td>
+      <td><span class="op ${x.operation.toLowerCase()}">${x.operation}</span></td>
+      <td class="mono">EMPLOYEES</td>
+      <td class="mono">${x.pk}</td>
+      <td class="mono">${x.cols.length ? x.cols.join(", ") : "—"}</td>
+      <td>${x.user}</td>
+    </tr>`).join("");
+  document.getElementById("count").textContent=`${logs.length} record${logs.length===1?"":"s"}`;
+  if(logs[0]){
+    document.getElementById("oldJson").textContent=JSON.stringify(logs[0].oldV,null,2);
+    document.getElementById("newJson").textContent=JSON.stringify(logs[0].newV,null,2);
+  }
+}
+render();
+</script>
+</body>
+</html>
