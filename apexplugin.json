@@ -1,13 +1,14 @@
 {
   "name": "Audit Trail",
   "version": "0.1.0",
-  "description": "Customizable Oracle APEX region plugin for tracking form completion with progress bars, rings and segments, plus navigation to missing fields.",
+  "description": "Process plug-in for Oracle APEX that automatically logs old and new column values on insert, update and delete. It creates and validates the audit table for you, so no extra code is needed in the page.",
   "keywords": [
-    "form",
-    "completion",
-    "progress",
-    "progress-bar",
-    "region",
+    "audit",
+    "audit-trail",
+    "audit-log",
+    "history",
+    "logging",
+    "process",
     "oracle-apex"
   ],
   "homepage": "https://github.com/Cemsm/Audit-Trail",
@@ -32,11 +33,12 @@
     ],
     "apex": {
       "versions": [
-        "26.1.0"
+        "26.1.0",
+        "26.2.0"
       ],
       "plugin": {
         "internalName": "COM_CEMSM_AUDIT_TRAIL",
-        "type": "region",
+        "type": "process",
         "demo": "https://cemsm.github.io/Audit-Trail/demo.html",
         "previewImage": "https://raw.githubusercontent.com/Cemsm/Audit-Trail/main/screenshots/preview.png"
       }
