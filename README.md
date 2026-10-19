@@ -16,7 +16,7 @@ It records:
 
 The plug-in can also create or repair its audit table automatically.
 
-> **Oracle APEX:** 26.1.0  
+> **Oracle APEX:** 26.2.0  
 > **Plug-in type:** Process Type  
 > **Internal name:** `COM_CEMSM_AUDIT_TRAIL`  
 > **License:** MIT
@@ -278,7 +278,7 @@ Audit-Trail/
 
 ## 📋 Requirements
 
-- Oracle APEX 26.1.0
+- Oracle APEX 26.2.0
 - An APEX page with a form/DML process
 - The audited table must be in the current parsing schema
 - The parsing schema needs the required privileges when automatic audit-table creation/repair is enabled
